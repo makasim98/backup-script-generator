@@ -4,13 +4,55 @@ echo "==========================================================================
 echo "Welcome to your interactive backup system"
 echo "====================================================================================="
 
-list_curr_config() {}
-add_bckp_src() {}
-add_bckp_target() {}
-get_bckp_freq() {}
-get_max_history() {}
-get_bckp_format() {}
-generate_script() {}
+# --- Config Variables ---
+SOURCE_PATHS=()
+BACKUP_DESTINATION=""
+CRON_ENTRY=""
+BCKP_HISTORY_MAX_NUM=1
+BCKP_HISTORY_MAX_AGE_DAYS=30
+FORMAT=""
+
+# Nicolas
+add_bckp_src() {
+    echo "Sources" 
+}
+
+get_max_history() {
+    echo "History" 
+}
+
+get_bckp_format() {
+    echo "Format" 
+}
+
+# Maxim
+add_bckp_target() {
+    echo "Target" 
+}
+get_bckp_freq() {
+    echo "Frequency" 
+}
+
+help() {
+    echo "HELP" 
+}
+quit() {
+    while true; do
+    read -p "Are you sure you want to quit, discarding all changes? [y/n] " answer
+    case "$answer" in
+        [Yy]* ) exit 0 ;;
+        [Nn]* ) return ;;
+        * ) echo "Invalid input. Please enter 'y' or 'n'.";;
+    esac
+done
+}
+
+list_curr_config() {
+    echo "Showing configuration"
+}
+generate_script() {
+    echo "Generationg Script"
+}
 
 # Interactive menu
 # l) List current configurations (Summary of configured options)
@@ -24,7 +66,57 @@ generate_script() {}
 # g) Generate the Script from current config
 # q) Quit (Cancel generation)
 
+while true
+do
+    PS3="Chose one of the following options: "
+    options=("Show Configuration" "Sources" "Target" "Frequency" "History" "Format" "Generate Script" "Help" "Quit")
 
+    select opt in "${options[@]}"
+    do
+        case "$opt" in
+            "Show Configuration") 
+                list_curr_config
+                break
+                ;;
+            "Sources") 
+                add_bckp_src
+                break
+                ;;
+            "Target") 
+                add_bckp_target
+                break
+                ;;
+            "Frequency") 
+                get_bckp_freq
+                break
+                ;;
+            "History") 
+                get_max_history
+                break
+                ;;
+            "Format") 
+                get_bckp_format
+                break
+                ;;
+            "Generate Script") 
+                generate_script
+                break
+                ;;
+            "Help") 
+                help
+                break
+                ;;
+            "Quit") 
+                quit
+                break
+                ;;
+            *)
+                echo "Invalid option: Try Again!"
+                ;;
+        esac
+    done
+    echo ==============================================
+done
 
 
 
