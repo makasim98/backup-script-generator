@@ -1,4 +1,5 @@
 #!/bin/bash
+source ./util.sh
 
 echo "====================================================================================="
 echo "Welcome to your interactive backup system"
@@ -84,7 +85,18 @@ add_bckp_target() {
 }
 
 get_bckp_freq() {
-    
+    echo "--- Setting Backup Frequency (Shedule) ---"
+    read -p "Enter the shedule the backups will follow (e.g. '* * * * *'): " cron_shed 
+
+    if [ -z "$cron_shed" ]; then
+        echo "ERROR: The provided cron shedule cannot be empty. No changes made."
+        return
+    fi
+
+    if is_valid_cron "$cron_shed"; then
+        CRON_ENTRY="$cron_shed"
+        echo "SUCCESS: Shedule set to '$cron_shed'."
+    fi
 }
 
 # TODO: Write a Detailed Help section for each choise of the main menu
@@ -107,6 +119,7 @@ list_curr_config() {
     echo "=============================="
     echo "--- Showing configuration: ---"
     echo -e "BACKUP_DESTINATION: $BACKUP_DESTINATION"
+    echo -e "CRON_ENTRY: $CRON_ENTRY"
     echo -e "BCKP_HISTORY_MAX_NUM: $BCKP_HISTORY_MAX_NUM \nBCKP_HISTORY_MAX_AGE_DAYS: $BCKP_HISTORY_MAX_AGE_DAYS"
     echo -en "\nPress any ENTER to return to the menu..."
     read
@@ -120,9 +133,6 @@ generate_script() {
 # l) List current configurations (Summary of configured options)
 # t) Add backup target (Path to store the backup at)
 # c) Frequency (cron for sheduing)
-# h) History (How much/old do we keep before descarding the oldest one)
-#       - Max number (discrad oldes after # buckups)
-#       - Max age (discard backups older then AGE)
 # f) Format (How to store it - tar, gzip, zip)
 # g) Generate the Script from current config
 
