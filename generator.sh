@@ -18,32 +18,6 @@ add_bckp_src() {
 }
 
 get_max_history() {
-    echo "History" 
-}
-
-get_bckp_format() {
-    echo "Format" 
-}
-
-# Maxim
-# TODO: Handle '~' expansion to the users home directory (full path required for now)
-add_bckp_target() {
-    echo "--- Setting Backup Destination ---"
-    read -e -p "Enter the full destination path where your backups will be stored (e.g., /mnt/backups): " target    
-    if [ ! -d "$target" ]; then
-        echo "ERROR: '$target' is not a valid directory. No changes made."
-        return
-    elif [ ! -w "$target" ]; then
-        echo "ERROR: User '$USER' (you) do not have write permissions to '$target'. No changes made."
-        return
-    fi
-
-    BACKUP_DESTINATION="$target"
-    echo "SUCCESS: Backup destination set to '$target'."
-    echo "Note: Write permissions confirmed, no issues if backed-up by '$USER' user"
-}
-
-get_bckp_freq() {
     echo "=============================="
     echo "--- Setting Backup Frequency Configurations ---"
     
@@ -84,7 +58,33 @@ get_bckp_freq() {
                     ;;
             esac
         done
-    done
+    done 
+}
+
+get_bckp_format() {
+    echo "Format" 
+}
+
+# Maxim
+# TODO: Handle '~' expansion to the users home directory (full path required for now)
+add_bckp_target() {
+    echo "--- Setting Backup Destination ---"
+    read -e -p "Enter the full destination path where your backups will be stored (e.g., /mnt/backups): " target    
+    if [ ! -d "$target" ]; then
+        echo "ERROR: '$target' is not a valid directory. No changes made."
+        return
+    elif [ ! -w "$target" ]; then
+        echo "ERROR: User '$USER' (you) do not have write permissions to '$target'. No changes made."
+        return
+    fi
+
+    BACKUP_DESTINATION="$target"
+    echo "SUCCESS: Backup destination set to '$target'."
+    echo "Note: Write permissions confirmed, no issues if backed-up by '$USER' user"
+}
+
+get_bckp_freq() {
+    
 }
 
 # TODO: Write a Detailed Help section for each choise of the main menu
