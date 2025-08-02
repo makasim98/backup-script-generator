@@ -26,9 +26,23 @@ get_bckp_format() {
 }
 
 # Maxim
+# TODO: Handle '~' expansion to the users home directory
 add_bckp_target() {
-    echo "Target" 
+    echo "--- Setting Backup Destination ---"
+    read -e -p "Enter the destination path where your backups will be stored (e.g., /mnt/backups): " target    
+    if [ ! -d "$target" ]; then
+        echo "ERROR: '$target' is not a valid directory. No changes made."
+        return
+    elif [ ! -w "$target" ]; then
+        echo "ERROR: User '$USER' (you) do not have write permissions to '$target'. No changes made."
+        return
+    fi
+
+    BACKUP_DESTINATION="$target"
+    echo "SUCCESS: Backup destination set to '$target'."
+    echo "Note: Write permissions confirmed, no issues if backed-up by '$USER' user"
 }
+
 get_bckp_freq() {
     echo "Frequency" 
 }
@@ -38,17 +52,19 @@ help() {
 }
 quit() {
     while true; do
-    read -p "Are you sure you want to quit, discarding all changes? [y/n] " answer
-    case "$answer" in
-        [Yy]* ) exit 0 ;;
-        [Nn]* ) return ;;
-        * ) echo "Invalid input. Please enter 'y' or 'n'.";;
-    esac
-done
+        read -p "Are you sure you want to quit, discarding all changes? [y/n] " answer
+        case "$answer" in
+            [Yy]* ) exit 0 ;;
+            [Nn]* ) return ;;
+            * ) echo "Invalid input. Please enter 'y' or 'n'.";;
+        esac
+    done
 }
 
 list_curr_config() {
-    echo "Showing configuration"
+    echo "=============================="
+    echo "Showing configuration:"
+    echo -e "BACKUP_DESTINATION: $BACKUP_DESTINATION"
 }
 generate_script() {
     echo "Generationg Script"
