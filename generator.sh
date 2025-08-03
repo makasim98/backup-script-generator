@@ -5,6 +5,8 @@ echo "==========================================================================
 echo "Welcome to your interactive backup system"
 echo "====================================================================================="
 
+BACKUP_SCRIPT_CONTENT=""
+
 # --- Config Variables ---
 SOURCE_PATHS=()
 BACKUP_DESTINATION=""
@@ -13,34 +15,32 @@ BCKP_HISTORY_MAX_NUM=1
 BCKP_HISTORY_MAX_AGE_DAYS=30
 FORMAT=""
 
-# Nicolas
 add_bckp_src() {
     echo "--- Setting Source Directory to Backup ---"
     while true
     do
-	read -e -p "Enter the full source path of the directory to backup (e.g., /home/user/folder) OR enter 'done' when done: " src
+        read -e -p "Enter the full source path of the directory to backup (e.g., /home/user/folder) OR enter 'done' when done: " src
 
-	if [[ "$src" == "done" ]]
-	then
-		if [ ${#SOURCE_PATHS[@]} -eq 0 ]
-		then
-			echo "ERROR: No source directories have been added."
-			return
-		else
-			echo "Source directories added successfully."
-			break
-		fi
-	fi
+        if [[ "$src" == "done" ]]
+        then
+            if [ ${#SOURCE_PATHS[@]} -eq 0 ]
+            then
+                echo "ERROR: No source directories have been added."
+                return
+            else
+                echo "Source directories added successfully."
+                break
+            fi
+        fi
 
-	if [ -d "$src" ]
-	then
-		SOURCE_PATHS+=("$src")
-		echo "SUCCESS: Source directory '$src' added to the backup list."
-	else
-		echo "ERROR: '$src' is not a valid directory."
-	fi
+        if [ -d "$src" ]
+        then
+            SOURCE_PATHS+=("$src")
+            echo "SUCCESS: Source directory '$src' added to the backup list."
+        else
+            echo "ERROR: '$src' is not a valid directory."
+        fi
     done
-     
 }
 
 get_max_history() {
@@ -58,7 +58,7 @@ get_max_history() {
             case "$opt" in
                 "Max Backup Number") 
                     read -p "How many backup instances do you want to keep at the time (default: 1): " bckp_num
-                    if [[ "$bckp_num" =~ ^[0-9]+$ ]]; then 
+                    if [[ "$bckp_num" =~ ^[0-9]+$ ]] && [ "$bckp_num" -gt 0 ]; then 
                         BCKP_HISTORY_MAX_NUM=$bckp_num
                         echo -e "SUCCESS: Maximum number of backup instances is set to $bckp_num."
                     else
@@ -68,7 +68,7 @@ get_max_history() {
                     ;;
                 "Max Backup Age") 
                     read -p "Age cutoff after which the script will delete old backups  (default: 30): " bckp_age
-                    if [[ "$bckp_age" =~ ^[0-9]+$ ]]; then 
+                    if [[ "$bckp_age" =~ ^[0-9]+$ ]] && [ "$bckp_num" -gt 0 ]; then 
                         BCKP_HISTORY_MAX_AGE_DAYS=$bckp_age
                         echo -e "SUCCESS: Maximum age of backup instances is set to $bckp_age."
                     else
@@ -117,7 +117,6 @@ get_bckp_format() {
 
 }
 
-# Maxim
 # TODO: Handle '~' expansion to the users home directory (full path required for now)
 add_bckp_target() {
     echo "--- Setting Backup Destination ---"
