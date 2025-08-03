@@ -88,7 +88,33 @@ get_max_history() {
 }
 
 get_bckp_format() {
-    echo "Format" 
+    echo "--- Setting Backup Format ---"
+
+    local PS3="Choose a backup format: "
+    local options=("tar" "tar.gz (gzip)" "zip" "Back")
+
+    select opt in "${options[@]}"
+    do
+	    case "$opt" in
+		    "tar")
+			    FORMAT="tar"
+			    echo "SUCCESS: Backup format set to 'tar'."
+			    break;;
+		    "tar.gz (gzip)")
+			    FORMAT="tar.gz"
+			    echo "SUCCESS Backup format set to 'tar.gz'."
+			    break;;
+	 	    "zip")
+			    FORMAT="zip"
+			    echo "SUCCESS: Backup format set to 'zip'."
+			    break;;
+		    "Back")
+			    return;;
+		    *)
+			    echo "Invalid option: Please try again.";;
+	    esac
+    done
+
 }
 
 # Maxim
@@ -154,6 +180,8 @@ list_curr_config() {
 		    echo "    - $src"
 	    done
     fi
+
+    echo -e "BACKUP FORMAT: $FORMAT"
 
     echo -e "BACKUP_DESTINATION: $BACKUP_DESTINATION"
     echo -e "CRON_ENTRY: $CRON_ENTRY"
