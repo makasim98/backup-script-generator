@@ -1,5 +1,6 @@
 #!/bin/bash
 source ./util.sh
+source ./script_templates.sh
 
 BACKUP_SCRIPT_CONTENT=""
 
@@ -159,7 +160,8 @@ get_bckp_freq() {
 
 # TODO: Write a Detailed Help section for each choise of the main menu
 help() {
-    echo "HELP" 
+    echo "HELP"
+    generate_script_configs "${SOURCE_PATHS[@]}" "$BACKUP_DESTINATION" "$BCKP_HISTORY_MAX_NUM" $FORMAT
 }
 
 quit() {
@@ -212,10 +214,14 @@ generate_script() {
 
     ##### GENERATE THE SCRIPT HERE #####
 
+    BACKUP_SCRIPT_CONTENT=$(generate_script_header)
+    BACKUP_SCRIPT_CONTENT+=$(generate_script_configs "${SOURCE_PATHS[@]}" "$BACKUP_DESTINATION" "$BCKP_HISTORY_MAX_NUM" $FORMAT)
+    BACKUP_SCRIPT_CONTENT+=$(generate_script_body)
 
     ##### GENERATION FINISHED #####
 
-    echo $BACKUP_SCRIPT_CONTENT > "Somefile.txt"    
+    echo "$BACKUP_SCRIPT_CONTENT" > "output.sh"
+    chmod +x "output.sh"  
 
 
 }
