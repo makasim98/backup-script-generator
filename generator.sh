@@ -1,10 +1,6 @@
 #!/bin/bash
 source ./util.sh
 
-echo "====================================================================================="
-echo "Welcome to your interactive backup system"
-echo "====================================================================================="
-
 BACKUP_SCRIPT_CONTENT=""
 
 # --- Config Variables ---
@@ -12,7 +8,6 @@ SOURCE_PATHS=()
 BACKUP_DESTINATION=""
 CRON_ENTRY=""
 BCKP_HISTORY_MAX_NUM=1
-BCKP_HISTORY_MAX_AGE_DAYS=30
 FORMAT=""
 
 add_bckp_src() {
@@ -51,7 +46,7 @@ get_max_history() {
     do
         # TODO: Change the promt to beter represent the actions needed
         local PS3="Chose one of the following options: "
-        local options=("Max Backup Number" "Max Backup Age" "Back")
+        local options=("Max Backup Number" "Back")
 
         select opt in "${options[@]}"
         do
@@ -66,16 +61,6 @@ get_max_history() {
                     fi
                     break
                     ;;
-                "Max Backup Age") 
-                    read -p "Age cutoff after which the script will delete old backups  (default: 30): " bckp_age
-                    if [[ "$bckp_age" =~ ^[0-9]+$ ]] && [ "$bckp_num" -gt 0 ]; then 
-                        BCKP_HISTORY_MAX_AGE_DAYS=$bckp_age
-                        echo -e "SUCCESS: Maximum age of backup instances is set to $bckp_age."
-                    else
-                        echo -e "ERROR: Provided age '$bckp_age' is not a positive integer."
-                    fi
-                    break
-                    ;;
                 "Back") 
                     return
                     ;;
@@ -87,6 +72,7 @@ get_max_history() {
     done 
 }
 
+# TODO: test that the utility is installed before assigning the format
 get_bckp_format() {
     echo "--- Setting Backup Format ---"
 
@@ -117,16 +103,38 @@ get_bckp_format() {
 
 }
 
-# TODO: Handle '~' expansion to the users home directory (full path required for now)
 add_bckp_target() {
     echo "--- Setting Backup Destination ---"
-    read -e -p "Enter the full destination path where your backups will be stored (e.g., /mnt/backups): " target    
-    if [ ! -d "$target" ]; then
-        echo "ERROR: '$target' is not a valid directory. No changes made."
+    read -e -p "Enter the full destination path where your backups will be stored (e.g., /mnt/backups): " target
+
+    # Check if the target path is empty
+    if [ -z "$target" ]; then
+        echo "ERROR: Destination path cannot be empty. No changes made."
         return
-    elif [ ! -w "$target" ]; then
-        echo "ERROR: User '$USER' (you) do not have write permissions to '$target'. No changes made."
-        return
+    fi
+
+    # Check if provided path exists and user has write permissions
+    if [ -d "$target" ]; then
+        # The directory exists, so we just need to check for write permissions
+        if [ ! -w "$target" ]; then
+            echo "ERROR: User '$USER' does not have write permissions to existing directory '$target'. No changes made."
+            return
+        fi
+        
+    # If dir does not extist, recusively check closest existing parent folder to confirm user permissions
+    else
+        path_to_check="$target"
+
+        # Loop up the directory tree to find the nearest existing directory
+        while [ ! -d "$path_to_check" ] && [ "$path_to_check" != "/" ]; do
+            path_to_check=$(dirname "$path_to_check")
+        done
+
+        # Check if we have write permissions in the directory
+        if [ ! -w "$path_to_check" ]; then
+            echo "ERROR: User '$USER' (you) does not have write permissions in '$path_to_check' to create '$target'. No changes made."
+            return
+        fi
     fi
 
     BACKUP_DESTINATION="$target"
@@ -166,9 +174,7 @@ quit() {
 }
 
 list_curr_config() {
-    echo "=============================="
     echo "--- Showing configuration: ---"
-    
     if [ ${#SOURCE_PATHS[@]} -eq 0 ]
     then
 	    echo "SOURCE PATHS: No source directories have been added yet."
@@ -180,37 +186,65 @@ list_curr_config() {
 	    done
     fi
 
+    echo -e "BACKUP_DESTINATION: $BACKUP_DESTINATION"
     echo -e "BACKUP FORMAT: $FORMAT"
 
-    echo -e "BACKUP_DESTINATION: $BACKUP_DESTINATION"
-    echo -e "CRON_ENTRY: $CRON_ENTRY"
-    echo -e "BCKP_HISTORY_MAX_NUM: $BCKP_HISTORY_MAX_NUM \nBCKP_HISTORY_MAX_AGE_DAYS: $BCKP_HISTORY_MAX_AGE_DAYS"
-    echo -en "\nPress any ENTER to return to the menu..."
-    read
+    echo -e "CRON SHEDULE: $CRON_ENTRY"
+    echo -e "MAX NUMBER OF BACKUPS: $BCKP_HISTORY_MAX_NUM"
 }
 
 generate_script() {
-    echo "Generationg Script"
+    # Check that all required Configs are set
+    if [ ${#SOURCE_PATHS[@]} -eq 0 ]; then
+        echo "ERROR: No source directories have been added."
+        return
+    elif [ -z "$BACKUP_DESTINATION" ]; then
+       echo "ERROR: No destination path provided."
+       return 
+    elif [ -z "$FORMAT" ]; then
+        echo "ERROR: No archiving format provided."
+        return 
+    fi
+
+    echo "========== Generating Script =========="
+    echo ""
+    list_curr_config
+
+    ##### GENERATE THE SCRIPT HERE #####
+
+
+    ##### GENERATION FINISHED #####
+
+    echo $BACKUP_SCRIPT_CONTENT > "Somefile.txt"    
+
+
+}
+
+print_header_banner() {
+    clear
+    echo "============================================="
+    echo "Welcome to your interactive backup system"
+    echo "============================================="
 }
 
 # Interactive menu
-# l) List current configurations (Summary of configured options)
-# t) Add backup target (Path to store the backup at)
-# c) Frequency (cron for sheduing)
 # f) Format (How to store it - tar, gzip, zip)
 # g) Generate the Script from current config
 
+print_header_banner
 while true
 do
     # TODO: Change the promt to beter represent the actions needed
+    # print_header_banner
     PS3="Chose one of the following options: "
     options=("Show Configuration" "Sources" "Target" "Frequency" "History" "Format" "Generate Script" "Help" "Quit")
 
     select opt in "${options[@]}"
     do
         case "$opt" in
-            "Show Configuration") 
+            "Show Configuration")
                 list_curr_config
+                echo -en "\nPress ENTER key to return to the menu..."; read
                 break
                 ;;
             "Sources") 

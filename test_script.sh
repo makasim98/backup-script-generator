@@ -6,21 +6,19 @@
 # and automatically prunes old backups to save space.
 #
 
-# --- Configurations ---
+
+# 1. ----- Configurations -----
 # Source paths to back up. Add or remove paths as needed.
 SOURCE_PATHS=(/home/makasim/workspace/bootdotdev/bookbot /home/makasim/workspace/mthree/aws-creds)
 DESTINATION_PATH="/home/makasim/workspace/test2"
 BCKP_HISTORY_MAX_NUM=3
 ARCHIVE_FORMAT="tar"
 LOGFILE_PATH="${DESTINATION_PATH}/backup.log"
-
+TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+BACKUP_FILENAME="backup-${TIMESTAMP}.${ARCHIVE_FORMAT}"
 
 # Redirect all output to logfile
 exec &>> $LOGFILE_PATH
-
-# --- Variables ---
-TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
-BACKUP_FILENAME="backup-${TIMESTAMP}.${ARCHIVE_FORMAT}"
 
 # Create destination directory if it doesn't exist
 mkdir -p "${DESTINATION_PATH}"
@@ -43,7 +41,8 @@ mkdir -p "${DESTINATION_PATH}"
 # esac
 ARCHIVE_CMD="tar -cf"
 
-# Perform backup
+
+# 2. ----- Perform Backup -----
 echo "====================================================================================="
 echo "[$(date)] Archiving files to ${BACKUP_FILENAME}..." | tee /dev/tty
 ${ARCHIVE_CMD} "${DESTINATION_PATH}/${BACKUP_FILENAME}" "${SOURCE_PATHS[@]}"
