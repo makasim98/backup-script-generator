@@ -15,7 +15,32 @@ FORMAT=""
 
 # Nicolas
 add_bckp_src() {
-    echo "Sources" 
+    echo "--- Setting Source Directory to Backup ---"
+    while true
+    do
+	read -e -p "Enter the full source path of the directory to backup (e.g., /home/user/folder) OR enter 'done' when done: " src
+
+	if [[ "$src" == "done" ]]
+	then
+		if [ ${#SOURCE_PATHS[@]} -eq 0 ]
+		then
+			echo "ERROR: No source directories have been added."
+			return
+		else
+			echo "Source directories added successfully."
+			break
+		fi
+	fi
+
+	if [ -d "$src" ]
+	then
+		SOURCE_PATHS+=("$src")
+		echo "SUCCESS: Source directory '$src' added to the backup list."
+	else
+		echo "ERROR: '$src' is not a valid directory."
+	fi
+    done
+     
 }
 
 get_max_history() {
@@ -118,6 +143,18 @@ quit() {
 list_curr_config() {
     echo "=============================="
     echo "--- Showing configuration: ---"
+    
+    if [ ${#SOURCE_PATHS[@]} -eq 0 ]
+    then
+	    echo "SOURCE PATHS: No source directories have been added yet."
+    else
+	    echo "SOURCE PATHS: "
+	    for src in "${SOURCE_PATHS[@]}"
+	    do
+		    echo "    - $src"
+	    done
+    fi
+
     echo -e "BACKUP_DESTINATION: $BACKUP_DESTINATION"
     echo -e "CRON_ENTRY: $CRON_ENTRY"
     echo -e "BCKP_HISTORY_MAX_NUM: $BCKP_HISTORY_MAX_NUM \nBCKP_HISTORY_MAX_AGE_DAYS: $BCKP_HISTORY_MAX_AGE_DAYS"
