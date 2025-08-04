@@ -321,12 +321,18 @@ generate_script() {
     # Check that all required Configs are set
     if [ ${#SOURCE_PATHS[@]} -eq 0 ]; then
         echo "ERROR: No source directories have been added."
+	echo "Please add at least one source directory before generating the script."
+        read -n 1 -s -r -p $'\nPress any key to return to the menu...'
         return
     elif [ -z "$BACKUP_DESTINATION" ]; then
        echo "ERROR: No destination path provided."
+       echo "Please set a backup destination path first."
+       read -n 1 -s -r -p $'\nPress any key to return to the menu...'
        return 
     elif [ -z "$FORMAT" ]; then
         echo "ERROR: No archiving format provided."
+	echo "Please choose a format like 'tar' or 'zip'."
+        read -n 1 -s -r -p $'\nPress any key to return to the menu...'
         return 
     fi
 
@@ -337,13 +343,61 @@ generate_script() {
     ##### GENERATE THE SCRIPT HERE #####
 
     BACKUP_SCRIPT_CONTENT=$(generate_script_header)
-    BACKUP_SCRIPT_CONTENT+=$(generate_script_configs "${SOURCE_PATHS[@]}" "$BACKUP_DESTINATION" "$BCKP_HISTORY_MAX_NUM" $FORMAT)
+    BACKUP_SCRIPT_CONTENT+=$(generate_script_configs "${SOURCE_PATHS[@]}" "$BACKUP_DESTINATION" "$BCKP_HISTORY_MAX_NUM" "$FORMAT")
     BACKUP_SCRIPT_CONTENT+=$(generate_script_body)
 
     ##### GENERATION FINISHED #####
 
-    echo "$BACKUP_SCRIPT_CONTENT" > "output.sh"
-    chmod +x "output.sh"  
+    echo -e "\nEnter the full path where you want to save the backup script (e.g., /home/user/backup.sh): "
+    read -r SCRIPT_PATH
+    if [ -z "$SCRIPT_PATH" ]
+    then
+	    echo "No path provided. Aborting script generation."
+	    return
+    fi
+    
+    if [ -d "$SCRIPT_PATH" ]
+    then
+	    SCRIPT_PATH="${SCRIPT_PATH%/}/backup.sh"
+    fi
+
+
+    DIR_PATH=$(dirname "$SCRIPT_PATH")
+    if [ ! -d "$DIR_PATH" ] || [ ! -w "$DIR_PATH" ]; then
+        echo "Directory '$DIR_PATH' does not exist or is not writable."
+        return
+    fi
+
+    echo "$BACKUP_SCRIPT_CONTENT" > "$SCRIPT_PATH"
+    chmod +x "$SCRIPT_PATH"
+    echo -e "\nBackup script successfully written to $SCRIPT_PATH"
+
+    # cron
+    echo -e "\nDo you want to schedule this backup with crontab? (y/n): "
+    read -r SCHEDULE_CRON
+
+    if [[ "$SCHEDULE_CRON" =~ ^[Yy]$ ]]
+    then
+        if [ -z "$CRON_ENTRY" ]
+	then
+            echo -e "\nNo existing cron configuration found. Opening cron setup..."
+            bckp_cron_set
+        fi
+
+        if [ -n "$CRON_ENTRY" ]
+	then
+            (crontab -l 2>/dev/null; echo "$CRON_ENTRY bash \"$SCRIPT_PATH\"") | crontab -
+            echo -e "\nCron job added successfully:"
+            echo "$CRON_ENTRY bash \"$SCRIPT_PATH\""
+        else
+            echo -e "\nSkipping cron scheduling. No valid cron configuration provided."
+        fi
+    fi
+
+        echo -e "\nAll done! The script has been generated and can be found in $SCRIPT_PATH"
+	read -n 1 -s -r -p $'\nPress any key to return to the main menu...'
+	clear
+	return  
 
 
 }
