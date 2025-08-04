@@ -219,27 +219,36 @@ bckp_history_max_num() {
 }
 
 # --- Backup Format Configuration ---
-# TODO: test that the utility is installed before assigning the format
-get_bckp_format() {
-    echo "--- Setting Backup Format ---"
+bckp_format_header() {
+    clear
+    echo "====================================="
+    echo "--- Backup Shedule Configuration  ---"
+    echo "====================================="
+}
 
+bckp_format_set() {
+    bckp_format_header
     local PS3="Choose a backup format: "
     local options=("tar" "tar.gz (gzip)" "zip" "Back")
+    local cmd=""
 
     select opt in "${options[@]}"
     do
 	    case "$opt" in
 		    "tar")
 			    FORMAT="tar"
-			    echo "SUCCESS: Backup format set to 'tar'."
+                cmd="tar"
+			    # echo "SUCCESS: Backup format set to 'tar'."
 			    break;;
 		    "tar.gz (gzip)")
 			    FORMAT="tar.gz"
-			    echo "SUCCESS Backup format set to 'tar.gz'."
+                cmd="gzip"
+			    # echo "SUCCESS Backup format set to 'tar.gz'."
 			    break;;
 	 	    "zip")
 			    FORMAT="zip"
-			    echo "SUCCESS: Backup format set to 'zip'."
+                cmd="zip"
+			    # echo "SUCCESS: Backup format set to 'zip'."
 			    break;;
 		    "Back")
 			    return;;
@@ -248,6 +257,11 @@ get_bckp_format() {
 	    esac
     done
 
+    echo "SUCCESS Backup format set to '$opt'."
+    if ! check_command_installed $cmd; then
+        echo "WARNING: '$cmd' command is not installed. The generated script may fail."
+    fi
+    echo -en "\nPress ENTER key to return to the menu..."; read
 }
 
 # --- Backup Shedule Configuration (CRON) ---
@@ -374,7 +388,7 @@ do
                 break
                 ;;
             "Format") 
-                get_bckp_format
+                bckp_format_set
                 break
                 ;;
             "Shedule") 
