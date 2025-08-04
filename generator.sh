@@ -222,7 +222,7 @@ bckp_history_max_num() {
 bckp_format_header() {
     clear
     echo "====================================="
-    echo "--- Backup Shedule Configuration  ---"
+    echo "--- Backup Schedule Configuration  ---"
     echo "====================================="
 }
 
@@ -264,21 +264,21 @@ bckp_format_set() {
     echo -en "\nPress ENTER key to return to the menu..."; read
 }
 
-# --- Backup Shedule Configuration (CRON) ---
+# --- Backup Schedule Configuration (CRON) ---
 bckp_cron_header() {
     clear
     echo "====================================="
-    echo "--- Backup Shedule Configuration  ---"
+    echo "--- Backup Schedule Configuration  ---"
     echo "====================================="
 }
 bckp_cron_set() {
     bckp_cron_header
     while true
     do
-        read -p "Enter the shedule the backups will follow in CRON format (e.g. '* * * * *') or 'done' to CANCEL: " cron_str
+        read -p "Enter the schedule the backups will follow in CRON format (e.g. '* * * * *') or 'done' to CANCEL: " cron_str
 
         if [ -z "$cron_str" ]; then
-            echo "ERROR: The provided cron shedule cannot be empty. Try again."
+            echo "ERROR: The provided cron schedule cannot be empty. Try again."
             continue
         fi
 
@@ -288,7 +288,7 @@ bckp_cron_set() {
 
         if is_valid_cron "$cron_str"; then
             CRON_ENTRY="$cron_str"
-            echo "SUCCESS: Shedule set to '$cron_str'."
+            echo "SUCCESS: Schedule set to '$cron_str'."
             echo -en "\nPress ENTER key to return to the menu..."; read
             return
         fi
@@ -313,7 +313,7 @@ list_curr_config() {
     echo -e "BACKUP_DESTINATION: $BACKUP_DESTINATION"
     echo -e "BACKUP FORMAT: $FORMAT"
 
-    echo -e "CRON SHEDULE: $CRON_ENTRY"
+    echo -e "CRON SCHEDULE: $CRON_ENTRY"
     echo -e "MAX NUMBER OF BACKUPS: $BCKP_HISTORY_MAX_NUM"
 }
 
@@ -419,7 +419,7 @@ do
     # print_header_banner
     menu_header_banner
     PS3="Chose one of the following options: "
-    options=("Show Configuration" "Sources" "Target" "History" "Format" "Shedule" "Generate Script" "Quit")
+    options=("Show Configuration" "Sources" "Target" "History" "Format" "Schedule" "Generate Script" "Quit")
 
     select opt in "${options[@]}"
     do
@@ -445,7 +445,7 @@ do
                 bckp_format_set
                 break
                 ;;
-            "Shedule") 
+            "Schedule") 
                 bckp_cron_set
                 break
                 ;;
