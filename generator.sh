@@ -18,7 +18,6 @@ bckp_src_header() {
     echo "--- Backup Source Configuration  ---"
     echo "===================================="
 }
-
 bckp_srs_menu() {  
     while true
     do
@@ -40,7 +39,7 @@ bckp_srs_menu() {
                 "List configured sources")
                     bckp_src_header
                     bckp_src_list
-                    echo -en "\nPress ENTER key to return to the menu..."; read
+                    read -n 1 -s -r -p $'\nPress any key to return to the menu...'
                     break
                     ;;
                 "Back") 
@@ -51,7 +50,6 @@ bckp_srs_menu() {
         done
     done
 }
-
 bckp_src_add() {
     bckp_src_header
     while true
@@ -71,14 +69,13 @@ bckp_src_add() {
         fi
     done
 }
-
 bckp_src_remove() {
     while true
     do
         bckp_src_header
         if [ ${#SOURCE_PATHS[@]} -eq 0 ]; then
             echo "ERROR: The source list is currently empty. Nothing to remove."
-            echo -en "\nPress ENTER key to return to the menu..."; read
+            read -n 1 -s -r -p $'\nPress any key to return to the menu...'
             return
         else
             echo "--- Currently configured Sources ---"
@@ -97,7 +94,6 @@ bckp_src_remove() {
         fi
     done
 }
-
 bckp_src_list () {
     bckp_src_header
     if [ ${#SOURCE_PATHS[@]} -eq 0 ]
@@ -119,7 +115,6 @@ bckp_dest_header() {
     echo "--- Backup Destination Configuration  ---"
     echo "========================================="
 }
-
 bckp_dest_set() {
     bckp_dest_header
     while true
@@ -166,7 +161,7 @@ bckp_dest_set() {
     BACKUP_DESTINATION="$dest"
     echo "SUCCESS: Backup destination set to '$dest'."
     echo "Note: Write permissions confirmed, no issues if backed-up by '$USER' user"
-    echo -en "\nPress ENTER key to return to the menu..."; read
+    read -n 1 -s -r -p $'\nPress any key to return to the menu...'
 }
 
 # --- Backup History Configuration ---
@@ -176,7 +171,6 @@ bckp_history_header() {
     echo "--- Backup History Configuration  ---"
     echo "====================================="
 }
-
 bckp_history_menu() {
     while true
     do
@@ -199,11 +193,11 @@ bckp_history_menu() {
         done
     done
 }
-
 bckp_history_max_num() {
+    bckp_history_header
     while true
     do
-        echo "Maximum amount of backups preserved at a time (default: 1): "
+        echo "Enter the maximum amount of backups preserved at a time (default: 1): "
         read -e -p "> " bckp_num
 
         if [[ "$bckp_num" =~ ^[0-9]+$ ]] && [ "$bckp_num" -gt 0 ]; then 
@@ -215,7 +209,7 @@ bckp_history_max_num() {
         fi
     done
 
-    echo -en "\nPress ENTER key to return to the menu..."; read
+    read -n 1 -s -r -p $'\nPress any key to return to the menu...'
 }
 
 # --- Backup Format Configuration ---
@@ -225,7 +219,6 @@ bckp_format_header() {
     echo "--- Backup Schedule Configuration  ---"
     echo "====================================="
 }
-
 bckp_format_set() {
     bckp_format_header
     local PS3="Choose a backup format: "
@@ -261,7 +254,7 @@ bckp_format_set() {
     if ! check_command_installed $cmd; then
         echo "WARNING: '$cmd' command is not installed. The generated script may fail."
     fi
-    echo -en "\nPress ENTER key to return to the menu..."; read
+    read -n 1 -s -r -p $'\nPress any key to return to the menu...'
 }
 
 # --- Backup Schedule Configuration (CRON) ---
@@ -289,23 +282,13 @@ bckp_cron_set() {
         if is_valid_cron "$cron_str"; then
             CRON_ENTRY="$cron_str"
             echo "SUCCESS: Schedule set to '$cron_str'."
-            echo -en "\nPress ENTER key to return to the menu..."; read
+            read -n 1 -s -r -p $'\nPress any key to return to the menu...'
             return
         fi
     done
 }
 
-quit() {
-    while true; do
-        read -p "Are you sure you want to quit, discarding all changes? [y/n] " answer
-        case "$answer" in
-            [Yy]* ) exit 0 ;;
-            [Nn]* ) return ;;
-            * ) echo "Invalid input. Please enter 'y' or 'n'.";;
-        esac
-    done
-}
-
+# --- List Current Configuration ---
 list_curr_config() {
     echo "--- Showing configuration: ---"
     bckp_src_list
@@ -317,7 +300,16 @@ list_curr_config() {
     echo -e "MAX NUMBER OF BACKUPS: $BCKP_HISTORY_MAX_NUM"
 }
 
-generate_script() {
+# --- Script Generation ---
+bcpk_gen_header() {
+    clear
+    echo "================================="
+    echo "--- Backup Script Generation  ---"
+    echo "================================="
+}
+bckp_gen_script() {
+    bcpk_gen_header
+
     # Check that all required Configs are set
     if [ ${#SOURCE_PATHS[@]} -eq 0 ]; then
         echo "ERROR: No source directories have been added."
@@ -331,11 +323,10 @@ generate_script() {
        return 
     elif [ -z "$FORMAT" ]; then
         echo "ERROR: No archiving format provided."
-	echo "Please choose a format like 'tar' or 'zip'."
+	    echo "Please choose a format like 'tar' or 'zip'."
         read -n 1 -s -r -p $'\nPress any key to return to the menu...'
         return 
     fi
-
 
     echo -e "\n========== Generating Script ==========\n"
     list_curr_config
@@ -348,31 +339,70 @@ generate_script() {
 
     ##### GENERATION FINISHED #####
 
-    echo -e "\nEnter the full path where you want to save the backup script (e.g., /home/user/backup.sh): "
-    read -r SCRIPT_PATH
-    if [ -z "$SCRIPT_PATH" ]
-    then
-	    echo "No path provided. Aborting script generation."
-	    return
-    fi
-    
-    if [ -d "$SCRIPT_PATH" ]
-    then
-	    SCRIPT_PATH="${SCRIPT_PATH%/}/backup.sh"
-    fi
+    # Fix - get dirname and do similar checks as set destination path
+    while true 
+    do
+        echo -e "\nEnter the full path where you want to save the backup script (e.g., /home/user/backup.sh) or 'abort' to CANCEL generation: "
+        read -r -e -p "> " SCRIPT_PATH
 
-    if [ -f "$SCRIPT_PATH" ]
-    then
-        read -p "WARNING: File '$SCRIPT_PATH' already exists. Overwrite? [y/N]: " confirm
-        [[ ! "$confirm" =~ ^[Yy]$ ]] && echo "Aborting." && return
-    fi
+        if [[ "$SCRIPT_PATH" == "abort" ]]; then
+            echo "Aborting script generation."
+            read -n 1 -s -r -p $'\nPress any key to return to the menu...'
+            return
+        fi
 
+        if [ -z "$SCRIPT_PATH" ]; then
+            echo "ERROR: No path was provided. Please enter a valid path."
+            continue
+        fi
 
-    DIR_PATH=$(dirname "$SCRIPT_PATH")
-    if [ ! -d "$DIR_PATH" ] || [ ! -w "$DIR_PATH" ]; then
-        echo "Directory '$DIR_PATH' does not exist or is not writable."
-        return
-    fi
+        if [ -d "$SCRIPT_PATH" ]; then
+            SCRIPT_PATH="${SCRIPT_PATH%/}/backup.sh"
+        fi
+
+        DIR_PATH=$(dirname "$SCRIPT_PATH")
+        if [ ! -d "$DIR_PATH" ] || [ ! -w "$DIR_PATH" ]; then
+            echo "Directory '$DIR_PATH' does not exist or is not writable. Please enter a writable directory "
+            continue
+        fi
+
+        if [ -f "$SCRIPT_PATH" ]; then
+            while true
+            do    
+                read -p "WARNING: File '$SCRIPT_PATH' already exists. Overwrite? [y/N] or [aA] to ABORT: " confirm
+                case "$confirm" in
+                    [Yy]) break 2 ;;
+                    [Nn])
+                        echo -e "\nEnter a new name for the script (e.g., my_new_backup.sh) or leave blank to cancel renaming: "
+                        read -r -p "> " NEW_FILENAME
+                        if [ -n "$NEW_FILENAME" ]; then
+                            # Construct the new path and check if it's also a valid location
+                            local NEW_SCRIPT_PATH="$DIR_PATH/$NEW_FILENAME"
+                            if [ -f "$NEW_SCRIPT_PATH" ]; then
+                                echo "ERROR: File '$NEW_SCRIPT_PATH' already exists. Please choose a different name."
+                                continue
+                            else
+                                SCRIPT_PATH="$NEW_SCRIPT_PATH"
+                                break 2
+                            fi
+                        else
+                            echo "Renaming canceled."
+                            continue
+                        fi
+                        ;;
+                    [Aa])
+                        echo "Aborting script generation."
+                        read -n 1 -s -r -p $'\nPress any key to return to the menu...'
+                        return 
+                        ;;
+                    *)
+                        echo "Invalid option. Please enter 'y', 'n' or 'a' ."
+                        ;;
+                esac
+            done
+        fi
+        break
+    done
 
     echo "$BACKUP_SCRIPT_CONTENT" > "$SCRIPT_PATH"
     chmod +x "$SCRIPT_PATH"
@@ -385,14 +415,15 @@ generate_script() {
     if [[ "$SCHEDULE_CRON" =~ ^[Yy]$ ]]
     then
         if [ -z "$CRON_ENTRY" ]
-	then
+	    then
             echo -e "\nNo existing cron configuration found. Opening cron setup..."
+            read -n 1 -s -r -p $'\nPress any key to continue...'
             bckp_cron_set
         fi
 
         if [ -n "$CRON_ENTRY" ]
-	then
-            (crontab -l 2>/dev/null; echo "$CRON_ENTRY bash \"$SCRIPT_PATH\"") | crontab -
+	    then
+            (crontab -l 2>/dev/null; echo "$CRON_ENTRY /bin/bash \"$SCRIPT_PATH\"") | crontab -
             echo -e "\nCron job added successfully:"
             echo "$CRON_ENTRY bash \"$SCRIPT_PATH\""
         else
@@ -400,12 +431,19 @@ generate_script() {
         fi
     fi
 
-        echo -e "\nAll done! The script has been generated and can be found in $SCRIPT_PATH"
+    echo -e "\nAll done! The script has been generated and can be found in $SCRIPT_PATH"
 	read -n 1 -s -r -p $'\nPress any key to return to the main menu...'
-	clear
-	return  
+}
 
-
+quit() {
+    while true; do
+        read -p "Are you sure you want to quit, discarding all changes? [y/n] " answer
+        case "$answer" in
+            [Yy]* ) exit 0 ;;
+            [Nn]* ) return ;;
+            * ) echo "Invalid input. Please enter 'y' or 'n'.";;
+        esac
+    done
 }
 
 menu_header_banner() {
@@ -414,10 +452,6 @@ menu_header_banner() {
     echo "--- Interactive Backup Script Generator ---"
     echo "==========================================="
 }
-
-# Interactive menu
-# f) Format (How to store it - tar, gzip, zip)
-# g) Generate the Script from current config
 
 while true
 do
@@ -432,7 +466,7 @@ do
         case "$opt" in
             "Show Configuration")
                 list_curr_config
-                echo -en "\nPress ENTER key to return to the menu..."; read
+                read -n 1 -s -r -p $'\nPress any key to return to the menu...'
                 break
                 ;;
             "Sources") 
@@ -456,7 +490,7 @@ do
                 break
                 ;;
             "Generate Script") 
-                generate_script
+                bckp_gen_script
                 break
                 ;;
             "Quit") 
@@ -468,7 +502,6 @@ do
                 ;;
         esac
     done
-    echo ==============================================
 done
 
 

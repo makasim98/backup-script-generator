@@ -47,6 +47,14 @@ TIMESTAMP=\$(date +%Y-%m-%d_%H-%M-%S)
 BACKUP_FILENAME="backup-\${TIMESTAMP}.\${ARCHIVE_FORMAT}"
 LOGFILE_PATH="\${DESTINATION_PATH}/backup.log"
 
+# A variable to store a string for output redirection
+REDIRECT_TTY=""
+
+# Check if a terminal is attached. If so, output to both log and screen.
+if [ -t 1 ]; then
+  REDIRECT_TTY="| tee /dev/tty"
+fi
+
 # Redirect all output to logfile
 exec &>> "\$LOGFILE_PATH"
 
@@ -63,13 +71,13 @@ generate_script_body() {
 mkdir -p "\${DESTINATION_PATH}"
 
 echo "====================================================================================="
-echo "[\$(date)] Archiving files to \${BACKUP_FILENAME}..." | tee /dev/tty
+echo "[\$(date)] Archiving files to \${BACKUP_FILENAME}..." \${REDIRECT_TTY}
 \${ARCHIVE_CMD} "\${DESTINATION_PATH}/\${BACKUP_FILENAME}" "\${SOURCE_PATHS[@]}"
 if [ \$? -ne 0 ] ; then
     echo "[\$(date)] ERROR: Backup failed. See logs at destination path for details"
     exit 1
 fi
-echo "[\$(date)] Backup successful." | tee /dev/tty
+echo "[\$(date)] Backup successful." \${REDIRECT_TTY}
 
 # Clen-up old backups, keeping only a certain amount of newest ones
 echo "[\$(date)] Cleaning old backups (keeping \${MAX_BACKUPS} most recent)..."
@@ -80,7 +88,7 @@ else
     echo "[\$(date)] Cleaning failed."
 fi
 
-echo "[\$(date)] Backup script finished." | tee /dev/tty
+echo "[\$(date)] Backup script finished." \${REDIRECT_TTY}
 exit 0
 
 EOF
