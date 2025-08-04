@@ -124,7 +124,7 @@ bckp_dest_set() {
     bckp_dest_header
     while true
     do
-        echo "Enter the full destination path where your backups will be stored (e.g., /mnt/backups) Or 'done' to go BACK : "
+        echo "Enter the full destination path where your backups will be stored (e.g., /mnt/backups) Or 'done' to CANCEL : "
         read -e -p "> " dest
 
         # Check if the destination path is empty
@@ -172,9 +172,9 @@ bckp_dest_set() {
 # --- Backup History Configuration ---
 bckp_history_header() {
     clear
-    echo "========================================="
+    echo "====================================="
     echo "--- Backup History Configuration  ---"
-    echo "========================================="
+    echo "====================================="
 }
 
 bckp_history_menu() {
@@ -251,19 +251,34 @@ get_bckp_format() {
 }
 
 # --- Backup Shedule Configuration (CRON) ---
-get_bckp_freq() {
-    echo "--- Setting Backup Frequency (Shedule) ---"
-    read -p "Enter the shedule the backups will follow (e.g. '* * * * *'): " cron_shed 
+bckp_cron_header() {
+    clear
+    echo "====================================="
+    echo "--- Backup Shedule Configuration  ---"
+    echo "====================================="
+}
+bckp_cron_set() {
+    bckp_cron_header
+    while true
+    do
+        read -p "Enter the shedule the backups will follow in CRON format (e.g. '* * * * *') or 'done' to CANCEL: " cron_str
 
-    if [ -z "$cron_shed" ]; then
-        echo "ERROR: The provided cron shedule cannot be empty. No changes made."
-        return
-    fi
+        if [ -z "$cron_str" ]; then
+            echo "ERROR: The provided cron shedule cannot be empty. Try again."
+            continue
+        fi
 
-    if is_valid_cron "$cron_shed"; then
-        CRON_ENTRY="$cron_shed"
-        echo "SUCCESS: Shedule set to '$cron_shed'."
-    fi
+        if [[ "$cron_str" == "done" ]]; then
+            return
+        fi
+
+        if is_valid_cron "$cron_str"; then
+            CRON_ENTRY="$cron_str"
+            echo "SUCCESS: Shedule set to '$cron_str'."
+            echo -en "\nPress ENTER key to return to the menu..."; read
+            return
+        fi
+    done
 }
 
 quit() {
@@ -336,7 +351,7 @@ do
     # print_header_banner
     menu_header_banner
     PS3="Chose one of the following options: "
-    options=("Show Configuration" "Sources" "Target" "History" "Format" "Frequency" "Generate Script" "Quit")
+    options=("Show Configuration" "Sources" "Target" "History" "Format" "Shedule" "Generate Script" "Quit")
 
     select opt in "${options[@]}"
     do
@@ -362,8 +377,8 @@ do
                 get_bckp_format
                 break
                 ;;
-            "Frequency") 
-                get_bckp_freq
+            "Shedule") 
+                bckp_cron_set
                 break
                 ;;
             "Generate Script") 
