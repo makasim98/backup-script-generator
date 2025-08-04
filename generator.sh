@@ -82,6 +82,7 @@ bckp_src_remove() {
             return
         else
             echo "--- Currently configured Sources ---"
+            local PS3="Choose the source you want to remove: "
             select path_to_remove in "${SOURCE_PATHS[@]}" "Cancel"
             do
                 if [[ "$path_to_remove" == "Cancel" ]] ; then
@@ -169,38 +170,52 @@ bckp_dest_set() {
 }
 
 # --- Backup History Configuration ---
-get_max_history() {
-    echo "=============================="
-    echo "--- Setting Backup Frequency Configurations ---"
-    
+bckp_history_header() {
+    clear
+    echo "========================================="
+    echo "--- Backup History Configuration  ---"
+    echo "========================================="
+}
+
+bckp_history_menu() {
     while true
     do
-        # TODO: Change the promt to beter represent the actions needed
-        local PS3="Chose one of the following options: "
-        local options=("Max Backup Number" "Back")
+        bckp_history_header
+        local PS3="Choose one of the actions: "
+        local options=("Max Number of Backups" "Back")
 
         select opt in "${options[@]}"
         do
             case "$opt" in
-                "Max Backup Number") 
-                    read -p "How many backup instances do you want to keep at the time (default: 1): " bckp_num
-                    if [[ "$bckp_num" =~ ^[0-9]+$ ]] && [ "$bckp_num" -gt 0 ]; then 
-                        BCKP_HISTORY_MAX_NUM=$bckp_num
-                        echo -e "SUCCESS: Maximum number of backup instances is set to $bckp_num."
-                    else
-                        echo -e "ERROR: Provided quantity '$bckp_num' is not a positive integer."
-                    fi
+                "Max Number of Backups")
+                    bckp_history_max_num
                     break
                     ;;
                 "Back") 
-                    return
-                    ;;
-                *)
-                    echo "Invalid option: Try Again!"
-                    ;;
+                    return;;
+                *) 
+                    echo "Invalid option: Try again!" ;;
             esac
         done
-    done 
+    done
+}
+
+bckp_history_max_num() {
+    while true
+    do
+        echo "Maximum amount of backups preserved at a time (default: 1): "
+        read -e -p "> " bckp_num
+
+        if [[ "$bckp_num" =~ ^[0-9]+$ ]] && [ "$bckp_num" -gt 0 ]; then 
+            BCKP_HISTORY_MAX_NUM=$bckp_num
+            echo -e "SUCCESS: Maximum number of backup instances is set to $bckp_num."
+            break
+        else
+            echo -e "ERROR: Provided quantity '$bckp_num' is not a positive integer. Try again"
+        fi
+    done
+
+    echo -en "\nPress ENTER key to return to the menu..."; read
 }
 
 # --- Backup Format Configuration ---
@@ -235,6 +250,7 @@ get_bckp_format() {
 
 }
 
+# --- Backup Shedule Configuration (CRON) ---
 get_bckp_freq() {
     echo "--- Setting Backup Frequency (Shedule) ---"
     read -p "Enter the shedule the backups will follow (e.g. '* * * * *'): " cron_shed 
@@ -320,7 +336,7 @@ do
     # print_header_banner
     menu_header_banner
     PS3="Chose one of the following options: "
-    options=("Show Configuration" "Sources" "Target" "Frequency" "History" "Format" "Generate Script" "Quit")
+    options=("Show Configuration" "Sources" "Target" "History" "Format" "Frequency" "Generate Script" "Quit")
 
     select opt in "${options[@]}"
     do
@@ -338,16 +354,16 @@ do
                 bckp_dest_set
                 break
                 ;;
-            "Frequency") 
-                get_bckp_freq
-                break
-                ;;
             "History") 
-                get_max_history
+                bckp_history_menu
                 break
                 ;;
             "Format") 
                 get_bckp_format
+                break
+                ;;
+            "Frequency") 
+                get_bckp_freq
                 break
                 ;;
             "Generate Script") 
