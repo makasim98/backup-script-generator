@@ -1,5 +1,9 @@
 #!/bin/bash
 
+check_command_installed() {
+    # Check if the command/tool exists using `command -v`
+    command -v "$1" &>/dev/null
+}
 
 # THIS is NOT a fool-proof check. It ignores possible semantic errors (Possible future upgrade)
 # EX: '* * */40 * *' --> is impossible because there is no month that has a 40th day (31 max)
