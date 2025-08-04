@@ -424,7 +424,7 @@ do
     # TODO: Change the promt to beter represent the actions needed
     # print_header_banner
     menu_header_banner
-    PS3="Chose one of the following options: "
+    PS3="Choose one of the following options: "
     options=("Show Configuration" "Sources" "Target" "History" "Format" "Schedule" "Generate Script" "Quit")
 
     select opt in "${options[@]}"
