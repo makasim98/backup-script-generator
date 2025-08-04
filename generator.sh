@@ -361,6 +361,12 @@ generate_script() {
 	    SCRIPT_PATH="${SCRIPT_PATH%/}/backup.sh"
     fi
 
+    if [ -f "$SCRIPT_PATH" ]
+    then
+        read -p "WARNING: File '$SCRIPT_PATH' already exists. Overwrite? [y/N]: " confirm
+        [[ ! "$confirm" =~ ^[Yy]$ ]] && echo "Aborting." && return
+    fi
+
 
     DIR_PATH=$(dirname "$SCRIPT_PATH")
     if [ ! -d "$DIR_PATH" ] || [ ! -w "$DIR_PATH" ]; then
