@@ -11,6 +11,7 @@ CRON_ENTRY=""
 BCKP_HISTORY_MAX_NUM=1
 FORMAT=""
 
+# --- Source Configuration ---
 bckp_src_header() {
     clear
     echo "===================================="
@@ -55,7 +56,7 @@ bckp_src_add() {
     bckp_src_header
     while true
     do
-        echo "Enter the full source path of the directory to backup (e.g., /home/user/folder) OR enter 'done' when done: "
+        echo "Enter the full source path of the directory to backup (e.g., /home/user/folder) OR enter 'done' when DONE: "
         read -e -p "> " src
 
         if [[ "$src" == "done" ]]; then
@@ -110,6 +111,64 @@ bckp_src_list () {
     fi
 }
 
+# --- Destination Configuration ---
+bckp_dest_header() {
+    clear
+    echo "========================================="
+    echo "--- Backup Destination Configuration  ---"
+    echo "========================================="
+}
+
+bckp_dest_set() {
+    bckp_dest_header
+    while true
+    do
+        echo "Enter the full destination path where your backups will be stored (e.g., /mnt/backups) Or 'done' to go BACK : "
+        read -e -p "> " dest
+
+        # Check if the destination path is empty
+        if [ -z "$dest" ]; then
+            echo "ERROR: Destination path cannot be empty. Try again."
+            continue
+        fi
+
+        if [[ "$dest" == "done" ]]; then
+            return
+        fi
+
+        # Check if provided path exists
+        if [ -d "$dest" ]; then
+            # Check for write user permissions
+            if [ ! -w "$dest" ]; then
+                echo "ERROR: User '$USER' does not have write permissions to existing directory '$dest'. Try again."
+                continue
+            fi
+            
+        # If dir does not extist, recusively check closest existing parent folder to confirm user permissions
+        else
+            path_to_check="$dest"
+
+            # Loop up the directory tree to find the nearest existing directory
+            while [ ! -d "$path_to_check" ] && [ "$path_to_check" != "/" ]; do
+                path_to_check=$(dirname "$path_to_check")
+            done
+
+            # Check if we have write permissions in the directory
+            if [ ! -w "$path_to_check" ]; then
+                echo "ERROR: User '$USER' (you) does not have write permissions in '$path_to_check' to create '$dest'. Try again."
+                continue
+            fi
+        fi
+        break
+    done
+
+    BACKUP_DESTINATION="$dest"
+    echo "SUCCESS: Backup destination set to '$dest'."
+    echo "Note: Write permissions confirmed, no issues if backed-up by '$USER' user"
+    echo -en "\nPress ENTER key to return to the menu..."; read
+}
+
+# --- Backup History Configuration ---
 get_max_history() {
     echo "=============================="
     echo "--- Setting Backup Frequency Configurations ---"
@@ -144,6 +203,7 @@ get_max_history() {
     done 
 }
 
+# --- Backup Format Configuration ---
 # TODO: test that the utility is installed before assigning the format
 get_bckp_format() {
     echo "--- Setting Backup Format ---"
@@ -173,45 +233,6 @@ get_bckp_format() {
 	    esac
     done
 
-}
-
-add_bckp_target() {
-    echo "--- Setting Backup Destination ---"
-    read -e -p "Enter the full destination path where your backups will be stored (e.g., /mnt/backups): " target
-
-    # Check if the target path is empty
-    if [ -z "$target" ]; then
-        echo "ERROR: Destination path cannot be empty. No changes made."
-        return
-    fi
-
-    # Check if provided path exists and user has write permissions
-    if [ -d "$target" ]; then
-        # The directory exists, so we just need to check for write permissions
-        if [ ! -w "$target" ]; then
-            echo "ERROR: User '$USER' does not have write permissions to existing directory '$target'. No changes made."
-            return
-        fi
-        
-    # If dir does not extist, recusively check closest existing parent folder to confirm user permissions
-    else
-        path_to_check="$target"
-
-        # Loop up the directory tree to find the nearest existing directory
-        while [ ! -d "$path_to_check" ] && [ "$path_to_check" != "/" ]; do
-            path_to_check=$(dirname "$path_to_check")
-        done
-
-        # Check if we have write permissions in the directory
-        if [ ! -w "$path_to_check" ]; then
-            echo "ERROR: User '$USER' (you) does not have write permissions in '$path_to_check' to create '$target'. No changes made."
-            return
-        fi
-    fi
-
-    BACKUP_DESTINATION="$target"
-    echo "SUCCESS: Backup destination set to '$target'."
-    echo "Note: Write permissions confirmed, no issues if backed-up by '$USER' user"
 }
 
 get_bckp_freq() {
@@ -305,7 +326,6 @@ do
     do
         case "$opt" in
             "Show Configuration")
-                menu_header_banner
                 list_curr_config
                 echo -en "\nPress ENTER key to return to the menu..."; read
                 break
@@ -315,7 +335,7 @@ do
                 break
                 ;;
             "Target") 
-                add_bckp_target
+                bckp_dest_set
                 break
                 ;;
             "Frequency") 
