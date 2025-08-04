@@ -11,32 +11,103 @@ CRON_ENTRY=""
 BCKP_HISTORY_MAX_NUM=1
 FORMAT=""
 
-add_bckp_src() {
-    echo "--- Setting Source Directory to Backup ---"
+bckp_src_header() {
+    clear
+    echo "===================================="
+    echo "--- Backup Source Configuration  ---"
+    echo "===================================="
+}
+
+bckp_srs_menu() {  
     while true
     do
-        read -e -p "Enter the full source path of the directory to backup (e.g., /home/user/folder) OR enter 'done' when done: " src
+        bckp_src_header
+        local PS3="Choose one of the actions: "
+        local options=("Add source" "Remove source" "List configured sources" "Back")
 
-        if [[ "$src" == "done" ]]
-        then
-            if [ ${#SOURCE_PATHS[@]} -eq 0 ]
-            then
-                echo "ERROR: No source directories have been added."
-                return
-            else
-                echo "Source directories added successfully."
-                break
-            fi
+        select opt in "${options[@]}"
+        do
+            case "$opt" in
+                "Add source")
+                    bckp_src_add
+                    break
+                    ;;
+                "Remove source")
+                    bckp_src_remove
+                    break
+                    ;;
+                "List configured sources")
+                    bckp_src_header
+                    bckp_src_list
+                    echo -en "\nPress ENTER key to return to the menu..."; read
+                    break
+                    ;;
+                "Back") 
+                    return;;
+                *) 
+                    echo "Invalid option: Try again!" ;;
+            esac
+        done
+    done
+}
+
+bckp_src_add() {
+    bckp_src_header
+    while true
+    do
+        echo "Enter the full source path of the directory to backup (e.g., /home/user/folder) OR enter 'done' when done: "
+        read -e -p "> " src
+
+        if [[ "$src" == "done" ]]; then
+            return
         fi
 
-        if [ -d "$src" ]
-        then
+        if [ -n "$src" ] && [ -d "$src" ]; then
             SOURCE_PATHS+=("$src")
             echo "SUCCESS: Source directory '$src' added to the backup list."
         else
             echo "ERROR: '$src' is not a valid directory."
         fi
     done
+}
+
+bckp_src_remove() {
+    while true
+    do
+        bckp_src_header
+        if [ ${#SOURCE_PATHS[@]} -eq 0 ]; then
+            echo "ERROR: The source list is currently empty. Nothing to remove."
+            echo -en "\nPress ENTER key to return to the menu..."; read
+            return
+        else
+            echo "--- Currently configured Sources ---"
+            select path_to_remove in "${SOURCE_PATHS[@]}" "Cancel"
+            do
+                if [[ "$path_to_remove" == "Cancel" ]] ; then
+                    return
+                elif [ -n "$path_to_remove" ]; then
+                    local index=$((REPLY - 1))
+                    unset 'SOURCE_PATHS[$index]'
+                    SOURCE_PATHS=("${SOURCE_PATHS[@]}")
+                    break
+                fi
+            done
+        fi
+    done
+}
+
+bckp_src_list () {
+    bckp_src_header
+    if [ ${#SOURCE_PATHS[@]} -eq 0 ]
+    then
+	    echo "SOURCE PATHS: No source directories have been added yet."
+    else
+	    echo "SOURCE PATHS: "
+	    for src in "${SOURCE_PATHS[@]}"
+	    do
+		    echo "    - $src"
+	    done
+    fi
 }
 
 get_max_history() {
@@ -158,12 +229,6 @@ get_bckp_freq() {
     fi
 }
 
-# TODO: Write a Detailed Help section for each choise of the main menu
-help() {
-    echo "HELP"
-    generate_script_configs "${SOURCE_PATHS[@]}" "$BACKUP_DESTINATION" "$BCKP_HISTORY_MAX_NUM" $FORMAT
-}
-
 quit() {
     while true; do
         read -p "Are you sure you want to quit, discarding all changes? [y/n] " answer
@@ -177,16 +242,7 @@ quit() {
 
 list_curr_config() {
     echo "--- Showing configuration: ---"
-    if [ ${#SOURCE_PATHS[@]} -eq 0 ]
-    then
-	    echo "SOURCE PATHS: No source directories have been added yet."
-    else
-	    echo "SOURCE PATHS: "
-	    for src in "${SOURCE_PATHS[@]}"
-	    do
-		    echo "    - $src"
-	    done
-    fi
+    bckp_src_list
 
     echo -e "BACKUP_DESTINATION: $BACKUP_DESTINATION"
     echo -e "BACKUP FORMAT: $FORMAT"
@@ -208,8 +264,8 @@ generate_script() {
         return 
     fi
 
-    echo "========== Generating Script =========="
-    echo ""
+
+    echo -e "\n========== Generating Script ==========\n"
     list_curr_config
 
     ##### GENERATE THE SCRIPT HERE #####
@@ -226,35 +282,36 @@ generate_script() {
 
 }
 
-print_header_banner() {
+menu_header_banner() {
     clear
-    echo "============================================="
-    echo "Welcome to your interactive backup system"
-    echo "============================================="
+    echo "==========================================="
+    echo "--- Interactive Backup Script Generator ---"
+    echo "==========================================="
 }
 
 # Interactive menu
 # f) Format (How to store it - tar, gzip, zip)
 # g) Generate the Script from current config
 
-print_header_banner
 while true
 do
     # TODO: Change the promt to beter represent the actions needed
     # print_header_banner
+    menu_header_banner
     PS3="Chose one of the following options: "
-    options=("Show Configuration" "Sources" "Target" "Frequency" "History" "Format" "Generate Script" "Help" "Quit")
+    options=("Show Configuration" "Sources" "Target" "Frequency" "History" "Format" "Generate Script" "Quit")
 
     select opt in "${options[@]}"
     do
         case "$opt" in
             "Show Configuration")
+                menu_header_banner
                 list_curr_config
                 echo -en "\nPress ENTER key to return to the menu..."; read
                 break
                 ;;
             "Sources") 
-                add_bckp_src
+                bckp_srs_menu
                 break
                 ;;
             "Target") 
@@ -275,10 +332,6 @@ do
                 ;;
             "Generate Script") 
                 generate_script
-                break
-                ;;
-            "Help") 
-                help
                 break
                 ;;
             "Quit") 
